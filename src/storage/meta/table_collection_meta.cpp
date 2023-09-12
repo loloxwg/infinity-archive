@@ -240,6 +240,10 @@ EntryResult
 TableCollectionMeta::GetEntry(TableCollectionMeta* table_meta,
                               u64 txn_id,
                               TxnTimeStamp begin_ts) {
+    if (table_meta == nullptr) {
+        LOG_TRACE("Find no table meta.");
+        return {nullptr, MakeUnique<String>("Find no table meta.")};
+    }
     std::shared_lock<RWMutex> r_locker(table_meta->rw_locker_);
     if(table_meta->entry_list_.empty()) {
         LOG_TRACE("Empty table entry list.")

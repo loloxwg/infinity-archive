@@ -316,7 +316,12 @@ template <> IntegerT DataType::StringToType<IntegerT>(const String &str) {
     if (str.empty()) {
         return IntegerT{};
     }
-    return std::stoi(str);
+    size_t idx{};
+    int ans = std::stoi(str, &idx);
+    if (idx < str.size()) {
+        assert(0); // TODO: use throw here.
+    }
+    return ans;
 }
 
 template <> BigIntT DataType::StringToType<BigIntT>(const String &str) {
