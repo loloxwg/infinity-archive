@@ -65,6 +65,7 @@ struct ParserContext {
     TableCollectionEntry* table_collection_entry_{};
     Txn* txn_{};
     SharedPtr<SegmentEntry> segment_entry_{};
+    char delimiter_{};
 };
 
 void
@@ -228,13 +229,15 @@ PhysicalImport::CSVRowHandler(void *context) {
     for (SizeT column_idx = 0; column_idx < column_count; ++column_idx) {
         struct zsv_cell cell =
             zsv_get_cell(parser_context->parser_, column_idx);
-        if (cell.len > 0) {
-            ColumnDataEntry::Append(segment_entry->columns_[column_idx].get(),
-                                    String((char *)cell.str, cell.len),
-                                    write_row);
+        StringView data{};
+        if (cell.len) {
+            data = StringView((char *)cell.str, cell.len);   
+        }
+        auto column_data_entry = segment_entry->columns_[column_idx];
+        if (segment_entry->columns_[column_idx]->column_type_->IsEmbedding()) {
+            ColumnDataEntry::AppendEmbedding(column_data_entry.get(), data, write_row, parser_context->delimiter_);
         } else {
-            ColumnDataEntry::Append(segment_entry->columns_[column_idx].get(),
-                                    "", write_row);
+            ColumnDataEntry::Append(column_data_entry.get(), data, write_row);
         }
     }
 
@@ -289,6 +292,7 @@ void PhysicalImport::ImportCSV(QueryContext *query_context, DMLInputState *input
     opts.buffsize = (1<<20); // default buffer size 256k, we use 1M
 
     parser_context.parser_ = zsv_new(&opts);
+    parser_context.delimiter_ = delimiter_;
     enum zsv_status csv_parser_status;
     while((csv_parser_status = zsv_parse_more(parser_context.parser_)) == zsv_status_ok) {
         ;
