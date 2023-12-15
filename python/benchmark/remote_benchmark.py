@@ -170,7 +170,6 @@ def one_thread(rounds, path):
     results = []
 
     for i in range(rounds):
-        start = time.time()
 
         conn = ThriftInfinityClient(REMOTE_HOST)
         table = RemoteTable(conn, "default", "sift_benchmark")
